@@ -1,3 +1,4 @@
+const timers = require('timers');
 const WebSocket = require('ws');
 const ping = require('net-ping');
 const dns = require('dns');
@@ -50,7 +51,7 @@ function sendToSubscribers(hostname, problem, error) {
     });
 }
 
-setInterval(() => {
+(function pingHosts() {
     Object.keys(allHostnames).forEach(hostname => {
         dns.lookup(hostname, (error, address, family) => {
             if (error) {
@@ -71,4 +72,5 @@ setInterval(() => {
             });
         });
     });
-}, 1000);
+    timers.setTimeout(pingHosts, 1000);
+})();
