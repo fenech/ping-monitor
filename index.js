@@ -1,5 +1,6 @@
 const WebSocket = require('ws');
 const ping = require('net-ping');
+const dns = require('dns');
 
 const wss = new WebSocket.Server({ port: 8080 });
 
@@ -37,27 +38,37 @@ wss.on('connection', function connection(ws) {
 
 const pingSession = ping.createSession();
 
-setInterval(() =>
-    Object.keys(allHostnames).forEach(hostname =>
-        pingSession.pingHost(hostname, (error) => {
+function sendToSubscribers(hostname, problem, error) {
+    const message = JSON.stringify({ hostname, problem, error });
+
+    Array.from(allHostnames[hostname].subscribers).forEach(id => {
+        const client = allClients[id];
+        if (client.readyState === WebSocket.OPEN) {
+            client.send(message);
+        }
+        console.error(error);
+    });
+}
+
+setInterval(() => {
+    Object.keys(allHostnames).forEach(hostname => {
+        dns.lookup(hostname, (error, address, family) => {
             if (error) {
-                ++allHostnames[hostname].fails;
-            } else {
-                allHostnames[hostname].fails = 0;
+                sendToSubscribers(hostname, 'could not resolve', error);
+                return;
             }
 
-            if (allHostnames[hostname].fails >= 5) {
-                const message = JSON.stringify({
-                    hostname,
-                    status: 'down'
-                });
+            pingSession.pingHost(address, (error) => {
+                if (error) {
+                    ++allHostnames[hostname].fails;
+                } else {
+                    allHostnames[hostname].fails = 0;
+                }
 
-                Array.from(allHostnames[hostname].subscribers).forEach(id => {
-                    const client = allClients[id];
-                    if (client.readyState === WebSocket.OPEN) {
-                        client.send(message);
-                    }
-                });
-                console.log(message);
-            }
-        })), 1000);
+                if (allHostnames[hostname].fails >= 5) {
+                    sendToSubscribers(hostname, 'ping failed', error);
+                }
+            });
+        });
+    });
+}, 1000);
