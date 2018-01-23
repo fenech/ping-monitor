@@ -1,0 +1,15 @@
+{
+  "name": "ping-monitor",
+  "version": "1.0.0",
+  "description": "Ping monitor to check node connection status",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Tom Fenech",
+  "license": "MIT",
+  "dependencies": {
+    "net-ping": "^1.2.1",
+    "ws": "^4.0.0"
+  }
+}
