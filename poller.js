@@ -22,4 +22,4 @@ exports.poll = async function poll(allHostnames, hostname, dnsLookup, pingHost, 
     }
 
     timers.setTimeout(poll, 1000, allHostnames, hostname, dnsLookup, pingHost, onSuccess, onFailure);
-}
+};

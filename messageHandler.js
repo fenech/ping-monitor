@@ -26,5 +26,5 @@ exports.handleMessage = function (allHostnames, connectionId, dnsLookup, pingHos
         } catch (e) {
             console.error('expected JSON array of hostnames, received: %s', message);
         }
-    }
-}
+    };
+};
