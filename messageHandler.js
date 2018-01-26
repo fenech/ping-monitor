@@ -6,7 +6,7 @@ exports.removeExtraHosts = function (allHostnames, hostnames, connectionId) {
         .forEach(([hostname, { subscribers }]) => subscribers.delete(connectionId));
 }
 
-exports.handleMessage = function (allHostnames, connectionId, dnsLookup, pingHost, sendToSubscribers) {
+exports.handleMessage = function (allHostnames, connectionId, dnsLookup, pingHost, onSuccess, onFailure) {
     return function incoming(message) {
         try {
             const hostnames = JSON.parse(message);
@@ -18,7 +18,7 @@ exports.handleMessage = function (allHostnames, connectionId, dnsLookup, pingHos
                         subscribers: new Set()
                     };
 
-                    poller.poll(allHostnames, hostname, dnsLookup, pingHost, sendToSubscribers);
+                    poller.poll(allHostnames, hostname, dnsLookup, pingHost, onSuccess, onFailure);
                 }
 
                 allHostnames[hostname].subscribers.add(connectionId);

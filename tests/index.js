@@ -28,8 +28,9 @@ test("handle message", t => {
 
     const dnsLookup = () => ({});
     const pingHost = () => {};
-    const sendToSubscribers = () => {};
-    const handle = messageHandler.handleMessage(allHostnames, connectionId, dnsLookup, pingHost, sendToSubscribers);
+    const onSuccess = () => {};
+    const onFailure = () => {};
+    const handle = messageHandler.handleMessage(allHostnames, connectionId, dnsLookup, pingHost, onSuccess, onFailure);
 
     const message = JSON.stringify(["host1", "host2"]);
     handle(message);
@@ -59,12 +60,13 @@ test("DNS lookup failure", t => {
 
     const dnsLookup = () => Promise.reject(new Error());
     const pingHost = () => {};
+    const onSuccess = () => {};
     let sent = false;
-    const sendToSubscribers = () => {
+    const onFailure = () => {
         sent = true;
     };
 
-    poller.poll(allHostnames, hostname, dnsLookup, pingHost, sendToSubscribers)
+    poller.poll(allHostnames, hostname, dnsLookup, pingHost, onSuccess, onFailure)
         .then(() => {
             t.assert(sent)
             t.end();
@@ -83,12 +85,13 @@ test("one ping failure", t => {
 
     const dnsLookup = () => ({});
     const pingHost = () => Promise.reject(new Error());
+    const onSuccess = () => {};
     let sent = false;
-    const sendToSubscribers = () => {
+    const onFailure = () => {
         sent = true;
     };
 
-    poller.poll(allHostnames, hostname, dnsLookup, pingHost, sendToSubscribers)
+    poller.poll(allHostnames, hostname, dnsLookup, pingHost, onSuccess, onFailure)
         .then(() => {
             t.equal(allHostnames[hostname].fails, 1);
             t.false(sent);
@@ -112,17 +115,25 @@ test("two ping failures, then success", t => {
         if (++count === 3) return Promise.resolve();
         return Promise.reject();
     };
-    let sent = false;
-    const sendToSubscribers = () => {
-        sent = true;
+
+    let sentSuccess = false;
+    const onSuccess = () => {
+        sentSuccess = true;
     };
 
-    Promise.all([1, 2, 3].map(() => poller.poll(allHostnames, hostname, dnsLookup, pingHost, sendToSubscribers)))
-        .then(() => {
-            t.equal(allHostnames[hostname].fails, 0);
-            t.false(sent);
-            t.end();
-        });
+    let sentFailure = false;
+    const onFailure = () => {
+        sentFailure = true;
+    };
+
+    Promise.all([1, 2, 3].map(() =>
+        poller.poll(allHostnames, hostname, dnsLookup, pingHost, onSuccess, onFailure)))
+            .then(() => {
+                t.equal(allHostnames[hostname].fails, 0);
+                t.assert(sentSuccess);
+                t.false(sentFailure);
+                t.end();
+            });
 });
 
 test("five ping failures", t => {
@@ -137,15 +148,17 @@ test("five ping failures", t => {
 
     const dnsLookup = () => ({});
     const pingHost = () => Promise.reject(new Error());
+    const onSuccess = () => {};
     let sent = false;
-    const sendToSubscribers = () => {
+    const onFailure = () => {
         sent = true;
     };
 
-    Promise.all([1, 2, 3, 4, 5].map(() => poller.poll(allHostnames, hostname, dnsLookup, pingHost, sendToSubscribers)))
-        .then(() => {
-            t.equal(allHostnames[hostname].fails, 5);
-            t.assert(sent);
-            t.end();
-        });
+    Promise.all([1, 2, 3, 4, 5].map(() =>
+        poller.poll(allHostnames, hostname, dnsLookup, pingHost, onSuccess, onFailure)))
+            .then(() => {
+                t.equal(allHostnames[hostname].fails, 5);
+                t.assert(sent);
+                t.end();
+            });
 });
