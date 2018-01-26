@@ -32,8 +32,19 @@ function onFailure(hostname, subscribers, error) {
     sendToSubscribers(subscribers, message);
 }
 
+function onClose(connectionId) {
+    return function close() {
+        delete allClients[connectionId];
+        Object.values(allHostnames).forEach(({ subscribers }) =>
+            subscribers.delete(connectionId));
+    };
+}
+
 wss.on('connection', function connection(ws) {
     allClients[connectionId] = ws;
+
     ws.on('message', messageHandler.handleMessage(allHostnames, connectionId, dnsLookup, pingHost, onSuccess, onFailure));
+    ws.on('close', onClose(connectionId));
+
     ++connectionId;
 });
