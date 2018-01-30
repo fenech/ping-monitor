@@ -13,7 +13,7 @@ exports.poll = async function poll(allHostnames, hostname, dnsLookup, pingHost, 
         } catch (error) {
             ++allHostnames[hostname].fails;
 
-            if (allHostnames[hostname].fails >= 5) {
+            if (allHostnames[hostname].fails >= 2) {
                 throw error;
             }
         }

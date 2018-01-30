@@ -1,7 +1,9 @@
 const util = require('util');
 const WebSocket = require('ws');
 const ping = require('net-ping');
-const pingSession = ping.createSession();
+const pingSession = ping.createSession({
+    timeout: 2000
+});
 const pingHost = util.promisify(pingSession.pingHost.bind(pingSession));
 const dns = require('dns');
 const dnsLookup = util.promisify(dns.lookup);
